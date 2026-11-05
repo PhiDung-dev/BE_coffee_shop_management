@@ -1,31 +1,53 @@
 package com.example.cf_shop_management.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "categories")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private String name;
-    private String slug;
-    @Column(name = "image_url")
-    private String imageUrl;
+    @Column(name = "id")
+    Long id;
+
+    @Column(name = "name", nullable = false, length = 100)
+    String name;
+
+    @Column(name = "slug", length = 100)
+    String slug;
+
+    @Column(name = "image_url", length = 255)
+    String imageUrl;
+
     @Column(name = "is_active")
-    private Boolean isActive;
+    Boolean isActive;
+
     @Column(name = "sort_order")
-    private Integer sortOrder;
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    Integer sortOrder;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    LocalDateTime createdAt;
+
+    @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+    @Builder.Default
+    Set<Product> products = new HashSet<>();
 }

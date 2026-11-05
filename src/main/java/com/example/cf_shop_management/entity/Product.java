@@ -1,37 +1,61 @@
 package com.example.cf_shop_management.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "products")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Product {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private String name;
-    private String slug;
-    @Column(name = "base_price")
-    private Double basePrice;
-    @Column(columnDefinition = "TEXT")
-    private String description;
-    private String image;
-    @Column(name = "is_active")
-    private Boolean isActive;
-    @Column(name = "sort_order")
-    private Integer sortOrder;
-    @Column(name = "category_id")
-    private Long categoryId;
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "id")
+    Long id;
+
+    @Column(name = "name", nullable = false, length = 150)
+    String name;
+
+    @Column(name = "slug", length = 100)
+    String slug;
+
+    @Column(name = "base_price", precision = 12, scale = 2)
+    BigDecimal basePrice;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    String description;
+
+    @Column(name = "image_url", length = 255)
+    String imageUrl;
+
+    @Column(name = "is_available")
+    Boolean isAvailable;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    Category category;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    LocalDateTime createdAt;
+
+    @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
+    @Builder.Default
+    Set<OrderItem> orderItems = new HashSet<>();
 }
