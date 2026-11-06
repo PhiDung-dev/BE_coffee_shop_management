@@ -9,8 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
-
-    List<Product> findByIsActiveTrue();
+    List<Product> findByIsAvailableTrue();
     List<Product> findByCategoryId(Long categoryId);
     Optional<Product> findBySlug(String slug);
     List<Product> findByNameContainingIgnoreCase(String name);
