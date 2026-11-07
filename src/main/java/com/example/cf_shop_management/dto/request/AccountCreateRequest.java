@@ -2,7 +2,6 @@ package com.example.cf_shop_management.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -26,6 +25,5 @@ public class AccountCreateRequest {
 
     String status;
 
-    @NotNull(message = "Role ID không được để trống")
     Long roleId;
 }
