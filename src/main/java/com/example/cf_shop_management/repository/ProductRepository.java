@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -19,6 +20,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     boolean existsBySlug(String slug);
 
+    List<Product> findByIsAvailableTrue();
+    List<Product> findByCategoryId(Long categoryId);
     Optional<Product> findBySlug(String slug);
 
     @Query("""
@@ -34,4 +37,5 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("isAvailable") Boolean isAvailable,
             Pageable pageable
     );
+    List<Product> findByNameContainingIgnoreCase(String name);
 }
