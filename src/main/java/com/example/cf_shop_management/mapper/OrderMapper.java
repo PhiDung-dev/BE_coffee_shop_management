@@ -2,6 +2,7 @@ package com.example.cf_shop_management.mapper;
 
 import com.example.cf_shop_management.dto.request.OrderCreateRequest;
 import com.example.cf_shop_management.dto.request.OrderUpdateRequest;
+import com.example.cf_shop_management.dto.response.OrderItemResponse;
 import com.example.cf_shop_management.dto.response.OrderResponse;
 import com.example.cf_shop_management.entity.Order;
 import com.example.cf_shop_management.entity.OrderItem;

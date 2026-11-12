@@ -38,6 +38,15 @@ public enum ErrorCode {
     PAYMENT_INVALID_AMOUNT(1024, "Số tiền thanh toán vượt quá số tiền còn lại của đơn hàng", HttpStatus.BAD_REQUEST),
     PAYMENT_ALREADY_COMPLETED(1025, "Không thể chỉnh sửa thông tin hoặc xóa giao dịch đã thanh toán thành công", HttpStatus.BAD_REQUEST),
     ORDER_ALREADY_PAID(1026, "Đơn hàng này đã được thanh toán đủ", HttpStatus.BAD_REQUEST),
+    ORDER_ITEM_NOT_FOUND(1027, "Không tìm thấy chi tiết món trong đơn hàng", HttpStatus.NOT_FOUND),
+    PRODUCT_UNAVAILABLE(1028, "Sản phẩm hiện đang ngừng phục vụ", HttpStatus.BAD_REQUEST),
+    ORDER_CANNOT_BE_MODIFIED(1029, "Không thể thêm, sửa hoặc xóa món của đơn hàng đã hoàn tất hoặc đã hủy", HttpStatus.BAD_REQUEST),
+    USER_VOUCHER_NOT_FOUND(1029, "Không tìm thấy voucher của người dùng", HttpStatus.NOT_FOUND),
+    ACCOUNT_NOT_FOUND(1031, "Không tìm thấy tài khoản", HttpStatus.NOT_FOUND),
+    VOUCHER_NOT_FOUND(1032, "Không tìm thấy voucher", HttpStatus.NOT_FOUND),
+    USER_VOUCHER_EXISTED(1033, "Tài khoản đã lưu voucher này", HttpStatus.BAD_REQUEST),
+    VOUCHER_UNAVAILABLE(1034, "Voucher đã ngừng hoạt động, hết hạn hoặc hết lượt sử dụng", HttpStatus.BAD_REQUEST),
+    USER_VOUCHER_ALREADY_USED(1035, "Voucher này đã được sử dụng, không thể chỉnh sửa hoặc xóa", HttpStatus.BAD_REQUEST),
     ;
 
     int code;
