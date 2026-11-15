@@ -47,6 +47,9 @@ public enum ErrorCode {
     USER_VOUCHER_EXISTED(1033, "Tài khoản đã lưu voucher này", HttpStatus.BAD_REQUEST),
     VOUCHER_UNAVAILABLE(1034, "Voucher đã ngừng hoạt động, hết hạn hoặc hết lượt sử dụng", HttpStatus.BAD_REQUEST),
     USER_VOUCHER_ALREADY_USED(1035, "Voucher này đã được sử dụng, không thể chỉnh sửa hoặc xóa", HttpStatus.BAD_REQUEST),
+    TAX_PROFILE_NOT_FOUND(1036, "Không tìm thấy hồ sơ thông tin xuất hóa đơn", HttpStatus.NOT_FOUND),
+    TAX_PROFILE_EXISTED(1037, "Mã số thuế này đã tồn tại trong danh sách của tài khoản", HttpStatus.BAD_REQUEST),
+    TAX_PROFILE_IN_USE(1038, "Không thể xóa hồ sơ thuế đã được sử dụng để xuất hóa đơn", HttpStatus.BAD_REQUEST),
     ;
 
     int code;
