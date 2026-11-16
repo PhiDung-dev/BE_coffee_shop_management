@@ -16,17 +16,12 @@ import java.time.LocalDateTime;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class VoucherCreateRequest {
-
     String title;
 
-    @NotBlank(message = "Mã voucher không được để trống")
     String code;
 
-    @NotBlank(message = "Loại giảm giá không được để trống")
     String discountType;
 
-    @NotNull(message = "Giá trị giảm không được để trống")
-    @Min(value = 0, message = "Giá trị giảm phải lớn hơn hoặc bằng 0")
     BigDecimal discountValue;
 
     BigDecimal maxDiscountAmount;

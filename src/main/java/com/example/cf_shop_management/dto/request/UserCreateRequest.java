@@ -13,8 +13,6 @@ import java.time.LocalDate;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserCreateRequest {
-
-    @NotBlank(message = "Họ và tên không được để trống")
     String fullName;
 
     String avatarUrl;

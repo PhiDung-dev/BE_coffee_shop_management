@@ -13,16 +13,11 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TablesCreateRequest {
-
-    @NotBlank(message = "Số bàn không được để trống")
     String tableNumber;
 
-    @NotNull(message = "Sức chứa không được để trống")
-    @Min(value = 1, message = "Sức chứa phải lớn hơn hoặc bằng 1")
     Integer capacity;
 
-    String status; // VD: AVAILABLE, OCCUPIED, RESERVED, MAINTENANCE (mặc định AVAILABLE nếu null)
+    String status;
 
-    @NotNull(message = "ID khu vực không được để trống")
     Long areaId;
 }

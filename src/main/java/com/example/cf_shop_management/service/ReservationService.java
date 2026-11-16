@@ -39,7 +39,9 @@ public class ReservationService {
     @Transactional
     public ReservationResponse createReservation(ReservationCreateRequest request) {
         Reservation reservation = reservationMapper.toReservation(request);
-        reservation.setStatus("PENDING");
+        reservation.setStatus((request.getStatus() != null && !request.getStatus().isBlank())
+                ? request.getStatus().trim().toUpperCase()
+                : "PENDING");
 
         if (request.getAccountId() != null) {
             Account account = accountRepository.findById(request.getAccountId())
@@ -81,7 +83,7 @@ public class ReservationService {
 
     @Transactional(readOnly = true)
     public List<ReservationResponse> getReservationsByStatus(String status) {
-        return reservationRepository.findByStatusOrderByReservationTimeAsc(status)
+        return reservationRepository.findByStatusOrderByReservationTimeAsc(status.trim().toUpperCase())
                 .stream()
                 .map(this::buildFullResponse)
                 .toList();
@@ -91,6 +93,16 @@ public class ReservationService {
     public ReservationResponse updateReservation(Long id, ReservationUpdateRequest request) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.RESERVATION_NOT_EXISTED));
+
+        if (request.getAccountId() != null) {
+            Account account = accountRepository.findById(request.getAccountId())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+            reservation.setAccount(account);
+        }
+
+        if (request.getStatus() != null && !request.getStatus().isBlank()) {
+            request.setStatus(request.getStatus().trim().toUpperCase());
+        }
 
         reservationMapper.updateReservation(request, reservation);
         Reservation updatedReservation = reservationRepository.save(reservation);
@@ -109,7 +121,7 @@ public class ReservationService {
     public ReservationResponse updateReservationStatus(Long id, String status) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.RESERVATION_NOT_EXISTED));
-        reservation.setStatus(status);
+        reservation.setStatus(status.trim().toUpperCase());
         return buildFullResponse(reservationRepository.save(reservation));
     }
 
@@ -121,10 +133,9 @@ public class ReservationService {
         reservationRepository.delete(reservation);
     }
 
-    // --- Helper methods ---
-
     private void assignTablesToReservation(Reservation reservation, List<Long> tableIds) {
-        for (Long tableId : tableIds) {
+        List<Long> distinctTableIds = tableIds.stream().distinct().toList();
+        for (Long tableId : distinctTableIds) {
             Tables table = tablesRepository.findById(tableId)
                     .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
 

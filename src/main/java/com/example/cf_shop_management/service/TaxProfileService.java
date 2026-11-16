@@ -82,12 +82,6 @@ public class TaxProfileService {
         TaxProfile taxProfile = taxProfileRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TAX_PROFILE_NOT_FOUND));
 
-        if (request.getAccountId() != null) {
-            Account account = accountRepository.findById(request.getAccountId())
-                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
-            taxProfile.setAccount(account);
-        }
-
         if (request.getCompanyName() != null && !request.getCompanyName().isBlank()) {
             request.setCompanyName(request.getCompanyName().trim());
         }
@@ -106,7 +100,7 @@ public class TaxProfileService {
             throw new AppException(ErrorCode.TAX_PROFILE_EXISTED);
         }
 
-        taxProfileMapper.updateTaxProfile(taxProfile, request);
+        taxProfileMapper.updateTaxProfile(request, taxProfile);
 
         return taxProfileMapper.toTaxProfileResponse(taxProfileRepository.save(taxProfile));
     }

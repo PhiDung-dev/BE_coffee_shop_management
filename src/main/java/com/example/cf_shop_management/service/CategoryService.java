@@ -8,6 +8,7 @@ import com.example.cf_shop_management.exception.AppException;
 import com.example.cf_shop_management.exception.ErrorCode;
 import com.example.cf_shop_management.mapper.CategoryMapper;
 import com.example.cf_shop_management.repository.CategoryRepository;
+import com.example.cf_shop_management.repository.ProductRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -25,23 +26,26 @@ import java.util.regex.Pattern;
 public class CategoryService {
 
     CategoryRepository categoryRepository;
+    ProductRepository productRepository;
     CategoryMapper categoryMapper;
 
     @Transactional
     public CategoryResponse createCategory(CategoryCreateRequest request) {
-        if (categoryRepository.existsByName(request.getName())) {
+        String trimmedName = request.getName().trim();
+        if (categoryRepository.existsByName(trimmedName)) {
             throw new AppException(ErrorCode.CATEGORY_NAME_EXISTED);
         }
 
         String slug = (request.getSlug() != null && !request.getSlug().isBlank())
                 ? request.getSlug().trim()
-                : generateSlug(request.getName());
+                : generateSlug(trimmedName);
 
         if (categoryRepository.existsBySlug(slug)) {
             throw new AppException(ErrorCode.CATEGORY_SLUG_EXISTED);
         }
 
         Category category = categoryMapper.toCategory(request);
+        category.setName(trimmedName);
         category.setSlug(slug);
 
         if (category.getIsActive() == null) {
@@ -59,16 +63,20 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_EXISTED));
 
-        if (request.getName() != null && !request.getName().equals(category.getName())) {
-            if (categoryRepository.existsByName(request.getName())) {
+        if (request.getName() != null && !request.getName().isBlank()) {
+            String trimmedName = request.getName().trim();
+            if (categoryRepository.existsByNameIgnoreCaseAndIdNot(trimmedName, id)) {
                 throw new AppException(ErrorCode.CATEGORY_NAME_EXISTED);
             }
+            request.setName(trimmedName);
         }
 
-        if (request.getSlug() != null && !request.getSlug().equals(category.getSlug())) {
-            if (categoryRepository.existsBySlug(request.getSlug())) {
+        if (request.getSlug() != null && !request.getSlug().isBlank()) {
+            String trimmedSlug = request.getSlug().trim();
+            if (categoryRepository.existsBySlugIgnoreCaseAndIdNot(trimmedSlug, id)) {
                 throw new AppException(ErrorCode.CATEGORY_SLUG_EXISTED);
             }
+            request.setSlug(trimmedSlug);
         }
 
         categoryMapper.updateCategory(request, category);
@@ -111,7 +119,7 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_EXISTED));
 
-        if (category.getProducts() != null && !category.getProducts().isEmpty()) {
+        if (productRepository.existsByCategoryId(id)) {
             throw new AppException(ErrorCode.CATEGORY_HAS_PRODUCTS);
         }
 

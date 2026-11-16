@@ -17,26 +17,11 @@ import java.time.LocalDateTime;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PaymentCreateRequest {
-
-    @NotNull(message = "Mã đơn hàng không được để trống")
     Long orderId;
 
-    @NotNull(message = "Số tiền thanh toán không được để trống")
-    @DecimalMin(value = "0.01", inclusive = true, message = "Số tiền thanh toán phải lớn hơn 0")
     BigDecimal amount;
 
-    @Size(max = 50, message = "Cổng thanh toán tối đa 50 ký tự")
-    String paymentGateway; // VD: VNPAY, MOMO, ZALOPAY, CASH
+    String paymentGateway;
 
-    @NotBlank(message = "Phương thức thanh toán không được để trống")
-    @Size(max = 20, message = "Phương thức thanh toán tối đa 20 ký tự")
-    String paymentMethod; // VD: CASH, QR, CARD, TRANSFER
-
-    @Size(max = 20, message = "Trạng thái tối đa 20 ký tự")
-    String status; // VD: PENDING, SUCCESS, FAILED, REFUNDED
-
-    @Size(max = 100, message = "Mã giao dịch tối đa 100 ký tự")
-    String transactionCode;
-
-    LocalDateTime paidAt;
+    String paymentMethod;
 }

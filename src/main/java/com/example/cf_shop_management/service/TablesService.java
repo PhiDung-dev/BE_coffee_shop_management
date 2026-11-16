@@ -29,7 +29,8 @@ public class TablesService {
 
     @Transactional
     public TablesResponse createTable(TablesCreateRequest request) {
-        if (tablesRepository.existsByTableNumber(request.getTableNumber())) {
+        String trimmedNumber = request.getTableNumber().trim();
+        if (tablesRepository.existsByTableNumber(trimmedNumber)) {
             throw new AppException(ErrorCode.TABLE_NUMBER_EXISTED);
         }
 
@@ -37,10 +38,13 @@ public class TablesService {
                 .orElseThrow(() -> new AppException(ErrorCode.AREA_NOT_EXISTED));
 
         Tables table = tablesMapper.toTables(request);
+        table.setTableNumber(trimmedNumber);
         table.setArea(area);
 
         if (table.getStatus() == null || table.getStatus().isBlank()) {
             table.setStatus("AVAILABLE");
+        } else {
+            table.setStatus(table.getStatus().trim().toUpperCase());
         }
 
         return tablesMapper.toTablesResponse(tablesRepository.save(table));
@@ -55,7 +59,7 @@ public class TablesService {
 
     @Transactional(readOnly = true)
     public TablesResponse getTableByNumber(String tableNumber) {
-        Tables table = tablesRepository.findByTableNumber(tableNumber)
+        Tables table = tablesRepository.findByTableNumber(tableNumber.trim())
                 .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
         return tablesMapper.toTablesResponse(table);
     }
@@ -78,7 +82,7 @@ public class TablesService {
 
     @Transactional(readOnly = true)
     public List<TablesResponse> getTablesByStatus(String status) {
-        return tablesRepository.findByStatus(status)
+        return tablesRepository.findByStatus(status.trim().toUpperCase())
                 .stream()
                 .map(tablesMapper::toTablesResponse)
                 .toList();
@@ -89,10 +93,16 @@ public class TablesService {
         Tables table = tablesRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
 
-        if (request.getTableNumber() != null
-                && !request.getTableNumber().equals(table.getTableNumber())
-                && tablesRepository.existsByTableNumber(request.getTableNumber())) {
-            throw new AppException(ErrorCode.TABLE_NUMBER_EXISTED);
+        if (request.getTableNumber() != null && !request.getTableNumber().isBlank()) {
+            String trimmedNumber = request.getTableNumber().trim();
+            if (tablesRepository.existsByTableNumberIgnoreCaseAndIdNot(trimmedNumber, id)) {
+                throw new AppException(ErrorCode.TABLE_NUMBER_EXISTED);
+            }
+            request.setTableNumber(trimmedNumber);
+        }
+
+        if (request.getStatus() != null && !request.getStatus().isBlank()) {
+            request.setStatus(request.getStatus().trim().toUpperCase());
         }
 
         tablesMapper.updateTables(request, table);
@@ -110,7 +120,7 @@ public class TablesService {
     public TablesResponse updateTableStatus(Long id, String status) {
         Tables table = tablesRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_EXISTED));
-        table.setStatus(status);
+        table.setStatus(status.trim().toUpperCase());
         return tablesMapper.toTablesResponse(tablesRepository.save(table));
     }
 

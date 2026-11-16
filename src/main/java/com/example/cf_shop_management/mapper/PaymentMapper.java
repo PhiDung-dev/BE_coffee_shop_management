@@ -10,6 +10,9 @@ import org.mapstruct.*;
 public interface PaymentMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "transactionCode", ignore = true)
+    @Mapping(target = "paidAt", ignore = true)
     @Mapping(target = "order", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -24,5 +27,5 @@ public interface PaymentMapper {
     @Mapping(target = "order", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    void updatePayment(@MappingTarget Payment payment, PaymentUpdateRequest request);
+    void updatePayment(PaymentUpdateRequest request, @MappingTarget Payment payment);
 }

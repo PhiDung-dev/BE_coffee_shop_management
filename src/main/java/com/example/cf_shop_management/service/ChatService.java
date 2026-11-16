@@ -2,6 +2,8 @@ package com.example.cf_shop_management.service;
 
 import com.example.cf_shop_management.entity.Account;
 import com.example.cf_shop_management.entity.ChatSession;
+import com.example.cf_shop_management.exception.AppException;
+import com.example.cf_shop_management.exception.ErrorCode;
 import com.example.cf_shop_management.repository.AccountRepository;
 import com.example.cf_shop_management.repository.ChatSessionRepository;
 import com.example.cf_shop_management.repository.JpaChatMemoryRepository;
@@ -42,18 +44,28 @@ public class ChatService {
     public ChatResponse chat(String sessionToken, Long accountId, String userMessage) {
         String activeToken = (sessionToken == null || sessionToken.isBlank())
                 ? UUID.randomUUID().toString()
-                : sessionToken;
+                : sessionToken.trim();
 
-        ChatSession session = sessionRepository.findBySessionToken(activeToken)
-                .orElseGet(() -> ChatSession.builder()
-                        .sessionToken(activeToken)
-                        .build());
-
-        if (accountId != null && session.getAccount() == null) {
-            Account account = accountRepository.findById(accountId).orElse(null);
-            session.setAccount(account);
+        boolean isNewSession = false;
+        ChatSession session = sessionRepository.findBySessionToken(activeToken).orElse(null);
+        if (session == null) {
+            session = ChatSession.builder()
+                    .sessionToken(activeToken)
+                    .build();
+            isNewSession = true;
         }
-        sessionRepository.save(session);
+
+        boolean shouldSave = isNewSession;
+        if (accountId != null && session.getAccount() == null) {
+            Account account = accountRepository.findById(accountId)
+                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_EXISTED));
+            session.setAccount(account);
+            shouldSave = true;
+        }
+
+        if (shouldSave) {
+            sessionRepository.save(session);
+        }
 
         String reply = chatClient.prompt()
                 .user(userMessage)

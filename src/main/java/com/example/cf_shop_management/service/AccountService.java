@@ -23,6 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AccountService {
+
     AccountRepository accountRepository;
     RoleRepository roleRepository;
     AccountMapper accountMapper;
@@ -30,17 +31,23 @@ public class AccountService {
 
     @Transactional
     public AccountResponse createAccount(AccountCreateRequest request) {
-        if (accountRepository.existsByEmail(request.getEmail())) {
+        String trimmedEmail = request.getEmail().trim();
+        if (accountRepository.existsByEmail(trimmedEmail)) {
             throw new AppException(ErrorCode.EMAIL_EXISTED);
         }
+
         Account account = accountMapper.toAccount(request);
+        account.setEmail(trimmedEmail);
+
         Role role = roleRepository.findById(request.getRoleId())
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
         account.setRole(role);
         account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        if (account.getStatus() == null) {
+
+        if (account.getStatus() == null || account.getStatus().isBlank()) {
             account.setStatus("ACTIVE");
         }
+
         return accountMapper.toAccountResponse(accountRepository.save(account));
     }
 
@@ -48,20 +55,27 @@ public class AccountService {
     public AccountResponse updateAccount(Long id, AccountUpdateRequest request) {
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_EXISTED));
-        if (request.getEmail() != null && !request.getEmail().equals(account.getEmail())) {
-            if (accountRepository.existsByEmail(request.getEmail())) {
+
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            String trimmedEmail = request.getEmail().trim();
+            if (accountRepository.existsByEmailIgnoreCaseAndIdNot(trimmedEmail, id)) {
                 throw new AppException(ErrorCode.EMAIL_EXISTED);
             }
+            request.setEmail(trimmedEmail);
         }
+
         accountMapper.updateAccount(request, account);
+
         if (request.getRoleId() != null) {
             Role role = roleRepository.findById(request.getRoleId())
                     .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
             account.setRole(role);
         }
+
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         }
+
         return accountMapper.toAccountResponse(accountRepository.save(account));
     }
 

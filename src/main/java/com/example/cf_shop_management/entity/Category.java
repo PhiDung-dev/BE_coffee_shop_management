@@ -34,7 +34,8 @@ public class Category {
     String imageUrl;
 
     @Column(name = "is_active")
-    Boolean isActive;
+    @Builder.Default
+    Boolean isActive = true;
 
     @Column(name = "sort_order")
     Integer sortOrder;

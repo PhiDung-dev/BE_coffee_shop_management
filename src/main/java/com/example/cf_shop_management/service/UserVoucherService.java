@@ -50,13 +50,8 @@ public class UserVoucherService {
         UserVoucher userVoucher = userVoucherMapper.toUserVoucher(request);
         userVoucher.setAccount(account);
         userVoucher.setVoucher(voucher);
-
-        if (userVoucher.getIsUsed() == null) {
-            userVoucher.setIsUsed(false);
-        }
-        if (Boolean.TRUE.equals(userVoucher.getIsUsed()) && userVoucher.getUsedAt() == null) {
-            userVoucher.setUsedAt(LocalDateTime.now());
-        }
+        userVoucher.setIsUsed(false);
+        userVoucher.setUsedAt(null);
 
         return userVoucherMapper.toUserVoucherResponse(userVoucherRepository.save(userVoucher));
     }
@@ -95,14 +90,13 @@ public class UserVoucherService {
         UserVoucher userVoucher = userVoucherRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_VOUCHER_NOT_FOUND));
 
-        userVoucherMapper.updateUserVoucher(userVoucher, request);
+        userVoucherMapper.updateUserVoucher(request, userVoucher);
 
         if (Boolean.TRUE.equals(userVoucher.getIsUsed())) {
             if (userVoucher.getUsedAt() == null) {
                 userVoucher.setUsedAt(LocalDateTime.now());
             }
         } else if (Boolean.FALSE.equals(request.getIsUsed())) {
-            // Hoàn lại voucher khi hủy đơn hàng
             userVoucher.setUsedAt(null);
         }
 

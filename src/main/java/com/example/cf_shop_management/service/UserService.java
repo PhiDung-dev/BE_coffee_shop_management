@@ -30,6 +30,9 @@ public class UserService {
     @Transactional
     public UserResponse createUser(UserCreateRequest request) {
         User user = userMapper.toUser(request);
+        if (request.getFullName() != null && !request.getFullName().isBlank()) {
+            user.setFullName(request.getFullName().trim());
+        }
 
         if (request.getAccountId() != null) {
             Account account = accountRepository.findById(request.getAccountId())
@@ -40,6 +43,7 @@ public class UserService {
             }
             user.setAccount(account);
         }
+
         return userMapper.toUserResponse(userRepository.save(user));
     }
 
@@ -47,17 +51,12 @@ public class UserService {
     public UserResponse updateUser(Long id, UserUpdateRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-        userMapper.updateUser(request, user);
-        if (request.getAccountId() != null) {
-            Account account = accountRepository.findById(request.getAccountId())
-                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_EXISTED));
-            Long currentAccountId = user.getAccount() != null ? user.getAccount().getId() : null;
-            if (!request.getAccountId().equals(currentAccountId)
-                    && userRepository.existsByAccountId(request.getAccountId())) {
-                throw new AppException(ErrorCode.ACCOUNT_ALREADY_LINKED);
-            }
-            user.setAccount(account);
+
+        if (request.getFullName() != null && !request.getFullName().isBlank()) {
+            request.setFullName(request.getFullName().trim());
         }
+
+        userMapper.updateUser(request, user);
 
         return userMapper.toUserResponse(userRepository.save(user));
     }

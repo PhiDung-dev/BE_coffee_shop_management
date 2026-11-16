@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserVoucherUpdateRequest {
-
     Boolean isUsed;
 
     LocalDateTime usedAt;

@@ -49,10 +49,7 @@ public class OrderItemService {
         orderItem.setOrder(order);
         orderItem.setProduct(product);
 
-        BigDecimal effectiveUnitPrice = (request.getUnitPrice() != null)
-                ? request.getUnitPrice()
-                : (product.getBasePrice() != null ? product.getBasePrice() : BigDecimal.ZERO);
-
+        BigDecimal effectiveUnitPrice = product.getBasePrice() != null ? product.getBasePrice() : BigDecimal.ZERO;
         orderItem.setUnitPrice(effectiveUnitPrice);
         orderItem.setSubtotal(effectiveUnitPrice.multiply(BigDecimal.valueOf(request.getQuantity())));
 
@@ -102,13 +99,10 @@ public class OrderItemService {
                 throw new AppException(ErrorCode.PRODUCT_UNAVAILABLE);
             }
             orderItem.setProduct(newProduct);
-
-            if (request.getUnitPrice() == null && newProduct.getBasePrice() != null) {
-                orderItem.setUnitPrice(newProduct.getBasePrice());
-            }
+            orderItem.setUnitPrice(newProduct.getBasePrice() != null ? newProduct.getBasePrice() : BigDecimal.ZERO);
         }
 
-        orderItemMapper.updateOrderItem(orderItem, request);
+        orderItemMapper.updateOrderItem(request, orderItem);
 
         BigDecimal unitPrice = orderItem.getUnitPrice() != null ? orderItem.getUnitPrice() : BigDecimal.ZERO;
         orderItem.setSubtotal(unitPrice.multiply(BigDecimal.valueOf(orderItem.getQuantity())));

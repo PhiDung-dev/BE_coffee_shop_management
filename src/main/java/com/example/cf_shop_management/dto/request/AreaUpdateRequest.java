@@ -11,7 +11,5 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AreaUpdateRequest {
-
-    @Size(max = 100, message = "Tên khu vực không được vượt quá 100 ký tự")
     String name;
 }

@@ -14,14 +14,9 @@ import java.math.BigDecimal;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderItemUpdateRequest {
-
     Long productId;
 
-    @Min(value = 1, message = "Số lượng tối thiểu là 1")
     Integer quantity;
 
     String selectedOptions;
-
-    @DecimalMin(value = "0.0", inclusive = true, message = "Đơn giá phải lớn hơn hoặc bằng 0")
-    BigDecimal unitPrice;
 }

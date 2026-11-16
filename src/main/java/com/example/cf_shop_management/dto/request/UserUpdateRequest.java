@@ -12,7 +12,6 @@ import java.time.LocalDate;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserUpdateRequest {
-
     String fullName;
 
     String avatarUrl;
@@ -20,6 +19,4 @@ public class UserUpdateRequest {
     LocalDate dob;
 
     String gender;
-
-    Long accountId;
 }

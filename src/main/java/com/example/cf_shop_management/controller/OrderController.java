@@ -9,9 +9,14 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -28,55 +33,59 @@ public class OrderController {
                 .build();
     }
 
+    @GetMapping
+    public ApiResponse<Page<OrderResponse>> getAllOrders(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String orderType,
+            @RequestParam(required = false) Long tableId,
+            @RequestParam(required = false) Long customerAccountId,
+            @RequestParam(required = false) Long staffAccountId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir
+    ) {
+        Sort sort = sortDir.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return ApiResponse.<Page<OrderResponse>>builder()
+                .result(orderService.getAllOrders(
+                        status, orderType, tableId, customerAccountId, staffAccountId, fromDate, toDate, keyword, pageable
+                ))
+                .build();
+    }
+
     @GetMapping("/{id}")
-    public ApiResponse<OrderResponse> getOrderById(@PathVariable("id") Long id) {
+    public ApiResponse<OrderResponse> getOrderById(@PathVariable Long id) {
         return ApiResponse.<OrderResponse>builder()
                 .result(orderService.getOrderById(id))
                 .build();
     }
 
     @GetMapping("/code/{orderCode}")
-    public ApiResponse<OrderResponse> getOrderByCode(@PathVariable("orderCode") String orderCode) {
+    public ApiResponse<OrderResponse> getOrderByCode(@PathVariable String orderCode) {
         return ApiResponse.<OrderResponse>builder()
                 .result(orderService.getOrderByCode(orderCode))
                 .build();
     }
 
-    @GetMapping
-    public ApiResponse<List<OrderResponse>> getAllOrders() {
-        return ApiResponse.<List<OrderResponse>>builder()
-                .result(orderService.getAllOrders())
-                .build();
-    }
-
-    @GetMapping("/customer/{customerAccountId}")
-    public ApiResponse<List<OrderResponse>> getOrdersByCustomer(
-            @PathVariable("customerAccountId") Long customerAccountId) {
-        return ApiResponse.<List<OrderResponse>>builder()
-                .result(orderService.getOrdersByCustomer(customerAccountId))
-                .build();
-    }
-
     @PutMapping("/{id}")
     public ApiResponse<OrderResponse> updateOrder(
-            @PathVariable("id") Long id,
-            @Valid @RequestBody OrderUpdateRequest request) {
+            @PathVariable Long id,
+            @Valid @RequestBody OrderUpdateRequest request
+    ) {
         return ApiResponse.<OrderResponse>builder()
                 .result(orderService.updateOrder(id, request))
                 .build();
     }
 
-    @PatchMapping("/{id}/status")
-    public ApiResponse<OrderResponse> updateOrderStatus(
-            @PathVariable("id") Long id,
-            @RequestParam("status") String status) {
-        return ApiResponse.<OrderResponse>builder()
-                .result(orderService.updateOrderStatus(id, status))
-                .build();
-    }
-
     @DeleteMapping("/{id}")
-    public ApiResponse<String> deleteOrder(@PathVariable("id") Long id) {
+    public ApiResponse<String> deleteOrder(@PathVariable Long id) {
         orderService.deleteOrder(id);
         return ApiResponse.<String>builder()
                 .result("Xóa đơn hàng thành công")

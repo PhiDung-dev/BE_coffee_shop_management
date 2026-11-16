@@ -27,7 +27,8 @@ public class PasswordReset {
     @Column(name = "expires_at")
     LocalDateTime expiresAt;
     @Column(name = "is_used")
-    Boolean isUsed;
+    @Builder.Default
+    Boolean isUsed = false;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id")
     Account account;

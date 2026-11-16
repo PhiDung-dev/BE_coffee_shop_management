@@ -10,10 +10,8 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TablesUpdateRequest {
-
     String tableNumber;
 
-    @Min(value = 1, message = "Sức chứa phải lớn hơn hoặc bằng 1")
     Integer capacity;
 
     String status;

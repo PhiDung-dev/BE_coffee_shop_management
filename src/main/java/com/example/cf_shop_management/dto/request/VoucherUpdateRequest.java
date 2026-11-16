@@ -13,15 +13,23 @@ import java.time.LocalDateTime;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class VoucherUpdateRequest {
-
     String title;
+
     String code;
+
     String discountType;
+
     BigDecimal discountValue;
+
     BigDecimal maxDiscountAmount;
+
     BigDecimal minOrderValue;
+
     LocalDateTime startDate;
+
     LocalDateTime endDate;
+
     Boolean isActive;
+
     Integer usageLimit;
 }

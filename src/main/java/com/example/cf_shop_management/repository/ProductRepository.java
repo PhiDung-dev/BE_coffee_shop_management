@@ -20,8 +20,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     boolean existsBySlug(String slug);
 
+    boolean existsByCategoryId(Long categoryId);
+
+    boolean existsBySlugIgnoreCaseAndIdNot(String slug, Long id);
+
     List<Product> findByIsAvailableTrue();
+
     List<Product> findByCategoryId(Long categoryId);
+
     Optional<Product> findBySlug(String slug);
 
     @Query("""
@@ -37,5 +43,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("isAvailable") Boolean isAvailable,
             Pageable pageable
     );
+
     List<Product> findByNameContainingIgnoreCase(String name);
 }

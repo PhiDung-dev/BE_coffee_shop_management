@@ -11,7 +11,6 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AccountUpdateRequest {
-    @Email(message = "Email không đúng định dạng")
     String email;
 
     String phone;

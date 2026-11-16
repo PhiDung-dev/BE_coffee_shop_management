@@ -13,14 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserVoucherCreateRequest {
-
-    @NotNull(message = "Mã tài khoản không được để trống")
     Long accountId;
 
-    @NotNull(message = "Mã voucher không được để trống")
     Long voucherId;
-
-    Boolean isUsed;
-
-    LocalDateTime usedAt;
 }

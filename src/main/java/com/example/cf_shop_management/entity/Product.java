@@ -41,7 +41,8 @@ public class Product {
     String imageUrl;
 
     @Column(name = "is_available")
-    Boolean isAvailable;
+    @Builder.Default
+    Boolean isAvailable = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")

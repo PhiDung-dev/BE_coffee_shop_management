@@ -12,6 +12,8 @@ public interface TablesRepository extends JpaRepository<Tables, Long> {
 
     boolean existsByTableNumber(String tableNumber);
 
+    boolean existsByTableNumberIgnoreCaseAndIdNot(String tableNumber, Long id);
+
     Optional<Tables> findByTableNumber(String tableNumber);
 
     List<Tables> findByAreaId(Long areaId);
@@ -19,4 +21,6 @@ public interface TablesRepository extends JpaRepository<Tables, Long> {
     List<Tables> findByStatus(String status);
 
     List<Tables> findByAreaIdAndStatus(Long areaId, String status);
+
+    boolean existsByAreaId(Long areaId);
 }

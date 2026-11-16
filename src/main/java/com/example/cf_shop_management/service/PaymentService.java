@@ -36,15 +36,10 @@ public class PaymentService {
         Order order = orderRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        if (request.getTransactionCode() != null && !request.getTransactionCode().isBlank()) {
-            String trimmedTxCode = request.getTransactionCode().trim();
-            if (paymentRepository.existsByTransactionCode(trimmedTxCode)) {
-                throw new AppException(ErrorCode.PAYMENT_TRANSACTION_EXISTED);
-            }
-            request.setTransactionCode(trimmedTxCode);
+        if ("CANCELLED".equalsIgnoreCase(order.getStatus())) {
+            throw new AppException(ErrorCode.ORDER_CANNOT_BE_MODIFIED);
         }
 
-        // Kiểm tra số tiền đã thanh toán và số tiền còn lại của đơn hàng
         if (order.getFinalAmount() != null) {
             BigDecimal totalPaid = paymentRepository.sumPaidAmountByOrderId(order.getId());
             BigDecimal remainingAmount = order.getFinalAmount().subtract(totalPaid);
@@ -65,14 +60,7 @@ public class PaymentService {
             payment.setPaymentGateway(request.getPaymentGateway().trim().toUpperCase());
         }
 
-        String status = (request.getStatus() != null && !request.getStatus().isBlank())
-                ? request.getStatus().trim().toUpperCase()
-                : "PENDING";
-        payment.setStatus(status);
-
-        if ("SUCCESS".equals(status) && payment.getPaidAt() == null) {
-            payment.setPaidAt(LocalDateTime.now());
-        }
+        payment.setStatus("PENDING");
 
         return paymentMapper.toPaymentResponse(paymentRepository.save(payment));
     }
@@ -123,7 +111,6 @@ public class PaymentService {
 
         boolean isCurrentlySuccess = "SUCCESS".equalsIgnoreCase(payment.getStatus());
 
-        // Giao dịch đã SUCCESS chỉ cho phép cập nhật trạng thái (ví dụ chuyển sang REFUNDED), không cho sửa số tiền/phương thức
         if (isCurrentlySuccess && (request.getAmount() != null
                 || request.getPaymentMethod() != null
                 || request.getPaymentGateway() != null)) {
@@ -138,17 +125,17 @@ public class PaymentService {
             request.setTransactionCode(trimmedTxCode);
         }
 
-        if (request.getPaymentMethod() != null) {
+        if (request.getPaymentMethod() != null && !request.getPaymentMethod().isBlank()) {
             request.setPaymentMethod(request.getPaymentMethod().trim().toUpperCase());
         }
-        if (request.getPaymentGateway() != null) {
+        if (request.getPaymentGateway() != null && !request.getPaymentGateway().isBlank()) {
             request.setPaymentGateway(request.getPaymentGateway().trim().toUpperCase());
         }
-        if (request.getStatus() != null) {
+        if (request.getStatus() != null && !request.getStatus().isBlank()) {
             request.setStatus(request.getStatus().trim().toUpperCase());
         }
 
-        paymentMapper.updatePayment(payment, request);
+        paymentMapper.updatePayment(request, payment);
 
         if ("SUCCESS".equalsIgnoreCase(payment.getStatus()) && payment.getPaidAt() == null) {
             payment.setPaidAt(LocalDateTime.now());

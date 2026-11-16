@@ -26,13 +26,18 @@ public class VoucherService {
 
     @Transactional
     public VoucherResponse createVoucher(VoucherCreateRequest request) {
-        if (voucherRepository.existsByCode(request.getCode())) {
+        String normalizedCode = request.getCode().trim().toUpperCase();
+        if (voucherRepository.existsByCode(normalizedCode)) {
             throw new AppException(ErrorCode.VOUCHER_CODE_EXISTED);
         }
 
         Voucher voucher = voucherMapper.toVoucher(request);
+        voucher.setCode(normalizedCode);
         voucher.setUsedCount(0);
 
+        if (request.getDiscountType() != null && !request.getDiscountType().isBlank()) {
+            voucher.setDiscountType(request.getDiscountType().trim().toUpperCase());
+        }
         if (voucher.getIsActive() == null) {
             voucher.setIsActive(true);
         }
@@ -45,10 +50,16 @@ public class VoucherService {
         Voucher voucher = voucherRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_NOT_EXISTED));
 
-        if (request.getCode() != null && !request.getCode().equals(voucher.getCode())) {
-            if (voucherRepository.existsByCode(request.getCode())) {
+        if (request.getCode() != null && !request.getCode().isBlank()) {
+            String trimmedCode = request.getCode().trim().toUpperCase();
+            if (voucherRepository.existsByCodeIgnoreCaseAndIdNot(trimmedCode, id)) {
                 throw new AppException(ErrorCode.VOUCHER_CODE_EXISTED);
             }
+            request.setCode(trimmedCode);
+        }
+
+        if (request.getDiscountType() != null && !request.getDiscountType().isBlank()) {
+            request.setDiscountType(request.getDiscountType().trim().toUpperCase());
         }
 
         voucherMapper.updateVoucher(request, voucher);
@@ -65,7 +76,7 @@ public class VoucherService {
 
     @Transactional(readOnly = true)
     public VoucherResponse getVoucherByCode(String code) {
-        Voucher voucher = voucherRepository.findByCode(code)
+        Voucher voucher = voucherRepository.findByCode(code.trim().toUpperCase())
                 .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_NOT_EXISTED));
         return voucherMapper.toVoucherResponse(voucher);
     }
@@ -73,6 +84,14 @@ public class VoucherService {
     @Transactional(readOnly = true)
     public List<VoucherResponse> getAllVouchers() {
         return voucherRepository.findAll()
+                .stream()
+                .map(voucherMapper::toVoucherResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<VoucherResponse> getActiveVouchers() {
+        return voucherRepository.findByIsActiveTrue()
                 .stream()
                 .map(voucherMapper::toVoucherResponse)
                 .toList();

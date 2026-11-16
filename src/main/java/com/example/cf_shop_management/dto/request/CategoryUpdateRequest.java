@@ -11,14 +11,10 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CategoryUpdateRequest {
-
-    @Size(max = 100, message = "Tên danh mục tối đa 100 ký tự")
     String name;
 
-    @Size(max = 100, message = "Slug tối đa 100 ký tự")
     String slug;
 
-    @Size(max = 255, message = "URL hình ảnh tối đa 255 ký tự")
     String imageUrl;
 
     Boolean isActive;

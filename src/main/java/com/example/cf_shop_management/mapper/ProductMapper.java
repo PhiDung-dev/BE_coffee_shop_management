@@ -9,6 +9,7 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring")
 public interface ProductMapper {
 
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "orderItems", ignore = true)
@@ -26,5 +27,5 @@ public interface ProductMapper {
     @Mapping(target = "orderItems", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    void updateProduct(@MappingTarget Product product, ProductUpdateRequest request);
+    void updateProduct(ProductUpdateRequest request, @MappingTarget Product product);
 }

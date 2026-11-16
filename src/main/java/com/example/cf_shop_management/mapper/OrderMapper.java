@@ -2,15 +2,27 @@ package com.example.cf_shop_management.mapper;
 
 import com.example.cf_shop_management.dto.request.OrderCreateRequest;
 import com.example.cf_shop_management.dto.request.OrderUpdateRequest;
-import com.example.cf_shop_management.dto.response.OrderItemResponse;
 import com.example.cf_shop_management.dto.response.OrderResponse;
 import com.example.cf_shop_management.entity.Order;
-import com.example.cf_shop_management.entity.OrderItem;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", uses = {OrderItemMapper.class})
 public interface OrderMapper {
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "orderCode", ignore = true)
+    @Mapping(target = "subtotal", ignore = true)
+    @Mapping(target = "discountAmount", ignore = true)
+    @Mapping(target = "finalAmount", ignore = true)
+    @Mapping(target = "table", ignore = true)
+    @Mapping(target = "customerAccount", ignore = true)
+    @Mapping(target = "staffAccount", ignore = true)
+    @Mapping(target = "appliedVoucher", ignore = true)
+    @Mapping(target = "orderItems", ignore = true)
+    @Mapping(target = "payments", ignore = true)
+    @Mapping(target = "invoice", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     Order toOrder(OrderCreateRequest request);
 
     @Mapping(source = "table.id", target = "tableId")
@@ -23,11 +35,20 @@ public interface OrderMapper {
     @Mapping(source = "appliedVoucher.code", target = "appliedVoucherCode")
     OrderResponse toOrderResponse(Order order);
 
-    @Mapping(source = "product.id", target = "productId")
-    @Mapping(source = "product.name", target = "productName")
-    @Mapping(source = "product.imageUrl", target = "productImageUrl")
-    OrderItemResponse toOrderItemResponse(OrderItem orderItem);
-
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "orderCode", ignore = true)
+    @Mapping(target = "subtotal", ignore = true)
+    @Mapping(target = "discountAmount", ignore = true)
+    @Mapping(target = "finalAmount", ignore = true)
+    @Mapping(target = "table", ignore = true)
+    @Mapping(target = "customerAccount", ignore = true)
+    @Mapping(target = "staffAccount", ignore = true)
+    @Mapping(target = "appliedVoucher", ignore = true)
+    @Mapping(target = "orderItems", ignore = true)
+    @Mapping(target = "payments", ignore = true)
+    @Mapping(target = "invoice", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     void updateOrder(OrderUpdateRequest request, @MappingTarget Order order);
 }

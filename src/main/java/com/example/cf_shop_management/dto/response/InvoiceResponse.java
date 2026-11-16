@@ -13,16 +13,13 @@ import java.time.LocalDateTime;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class InvoiceResponse {
-
     Long id;
     String invoiceNumber;
     LocalDateTime issuedAt;
     String pdfUrl;
-
     Long orderId;
     String orderCode;
-    BigDecimal finalAmount;
-
+    BigDecimal orderFinalAmount;
     Long taxProfileId;
     String companyName;
     String taxCode;

@@ -1,6 +1,7 @@
 package com.example.cf_shop_management.dto.request;
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -14,15 +15,15 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReservationUpdateRequest {
+    Long accountId;
 
-    @Min(value = 1, message = "Số lượng khách phải lớn hơn hoặc bằng 1")
     Integer guestCount;
-
-    String note;
 
     LocalDateTime reservationTime;
 
-    String status; // VD: PENDING, CONFIRMED, SEATED, COMPLETED, CANCELLED
+    String note;
+
+    String status;
 
     List<Long> tableIds;
 }

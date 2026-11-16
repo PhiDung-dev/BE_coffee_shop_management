@@ -32,7 +32,7 @@ public class Invoice {
     String pdfUrl;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id")
+    @JoinColumn(name = "order_id", unique = true)
     Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)

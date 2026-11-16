@@ -12,9 +12,8 @@ import java.time.LocalDateTime;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PasswordResetResponse {
-
     Long id;
-    String token;
+    String token;   // remove vi se gui token qua email
     LocalDateTime expiresAt;
     Boolean isUsed;
     Long accountId;

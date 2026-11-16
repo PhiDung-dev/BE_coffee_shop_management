@@ -14,6 +14,7 @@ public interface ReservationMapper {
     @Mapping(source = "account.id", target = "accountId")
     @Mapping(source = "account.email", target = "accountEmail")
     @Mapping(source = "account.phone", target = "accountPhone")
+    @Mapping(target = "tables", ignore = true)
     ReservationResponse toReservationResponse(Reservation reservation);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

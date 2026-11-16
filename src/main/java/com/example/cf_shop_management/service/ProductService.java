@@ -33,7 +33,8 @@ public class ProductService {
 
     @Transactional
     public ProductResponse createProduct(ProductCreateRequest request) {
-        if (productRepository.existsByNameIgnoreCase(request.getName().trim())) {
+        String trimmedName = request.getName().trim();
+        if (productRepository.existsByNameIgnoreCase(trimmedName)) {
             throw new AppException(ErrorCode.PRODUCT_EXISTED);
         }
 
@@ -41,7 +42,7 @@ public class ProductService {
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
 
         Product product = productMapper.toProduct(request);
-        product.setName(request.getName().trim());
+        product.setName(trimmedName);
         product.setCategory(category);
 
         if (product.getIsAvailable() == null) {
@@ -50,7 +51,7 @@ public class ProductService {
 
         String rawSlug = (request.getSlug() != null && !request.getSlug().isBlank())
                 ? request.getSlug()
-                : request.getName();
+                : trimmedName;
         product.setSlug(generateUniqueSlug(rawSlug));
 
         return productMapper.toProductResponse(productRepository.save(product));
@@ -72,7 +73,7 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public ProductResponse getProductBySlug(String slug) {
-        Product product = productRepository.findBySlug(slug)
+        Product product = productRepository.findBySlug(slug.trim())
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
         return productMapper.toProductResponse(product);
     }
@@ -96,7 +97,7 @@ public class ProductService {
             product.setCategory(category);
         }
 
-        productMapper.updateProduct(product, request);
+        productMapper.updateProduct(request, product);
 
         if (request.getSlug() != null && !request.getSlug().isBlank()) {
             String newSlug = toSlug(request.getSlug());

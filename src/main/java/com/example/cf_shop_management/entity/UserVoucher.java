@@ -23,7 +23,8 @@ public class UserVoucher {
     Long id;
 
     @Column(name = "is_used")
-    Boolean isUsed;
+    @Builder.Default
+    Boolean isUsed = false;
 
     @Column(name = "used_at")
     LocalDateTime usedAt;

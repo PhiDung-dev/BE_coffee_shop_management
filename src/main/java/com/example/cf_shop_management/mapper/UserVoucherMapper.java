@@ -10,6 +10,8 @@ import org.mapstruct.*;
 public interface UserVoucherMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "isUsed", ignore = true)
+    @Mapping(target = "usedAt", ignore = true)
     @Mapping(target = "account", ignore = true)
     @Mapping(target = "voucher", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -34,5 +36,5 @@ public interface UserVoucherMapper {
     @Mapping(target = "voucher", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    void updateUserVoucher(@MappingTarget UserVoucher userVoucher, UserVoucherUpdateRequest request);
+    void updateUserVoucher(UserVoucherUpdateRequest request, @MappingTarget UserVoucher userVoucher);
 }

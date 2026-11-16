@@ -49,6 +49,13 @@ public class VoucherController {
                 .build();
     }
 
+    @GetMapping("/active")
+    public ApiResponse<List<VoucherResponse>> getActiveVouchers() {
+        return ApiResponse.<List<VoucherResponse>>builder()
+                .result(voucherService.getActiveVouchers())
+                .build();
+    }
+
     @PutMapping("/{id}")
     public ApiResponse<VoucherResponse> updateVoucher(
             @PathVariable("id") Long id,

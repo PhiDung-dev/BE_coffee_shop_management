@@ -50,13 +50,15 @@ public class Voucher {
     LocalDateTime endDate;
 
     @Column(name = "is_active")
-    Boolean isActive;
+    @Builder.Default
+    Boolean isActive = true;
 
     @Column(name = "usage_limit")
     Integer usageLimit;
 
     @Column(name = "used_count")
-    Integer usedCount;
+    @Builder.Default
+    Integer usedCount = 0;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

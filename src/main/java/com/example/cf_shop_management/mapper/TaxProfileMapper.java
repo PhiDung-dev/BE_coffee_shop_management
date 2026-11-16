@@ -26,5 +26,5 @@ public interface TaxProfileMapper {
     @Mapping(target = "invoices", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    void updateTaxProfile(@MappingTarget TaxProfile taxProfile, TaxProfileUpdateRequest request);
+    void updateTaxProfile(TaxProfileUpdateRequest request, @MappingTarget TaxProfile taxProfile);
 }
