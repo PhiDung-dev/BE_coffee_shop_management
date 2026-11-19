@@ -13,12 +13,14 @@ import com.example.cf_shop_management.repository.PasswordResetRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,147 +44,220 @@ class PasswordResetServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private EmailService emailService;
+
     @InjectMocks
     private PasswordResetService passwordResetService;
 
     private Account account;
-    private PasswordReset passwordReset;
-    private PasswordResetResponse passwordResetResponse;
 
     @BeforeEach
     void setUp() {
         account = Account.builder()
-                .id(5L)
-                .email("user@cfshop.vn")
-                .passwordHash("old_hash")
-                .build();
-
-        passwordReset = PasswordReset.builder()
-                .id(10L)
-                .token("valid-reset-token")
-                .account(account)
-                .expiresAt(LocalDateTime.now().plusMinutes(15))
-                .isUsed(false)
-                .build();
-
-        passwordResetResponse = PasswordResetResponse.builder()
-                .id(10L)
-                .accountId(5L)
-                .expiresAt(passwordReset.getExpiresAt())
-                .isUsed(false)
+                .id(1L)
+                .email("customer@gmail.com")
+                .passwordHash("encodedOldPassword")
                 .build();
     }
 
     @Test
-    void createResetToken_InvalidatesOldTokensAndCreatesNew_Success() {
-        ForgotPasswordRequest request = ForgotPasswordRequest.builder()
-                .email("  user@cfshop.vn  ")
-                .build();
+    void createResetToken_ValidEmail_SavesTokenAndSendsEmail() {
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setEmail("  customer@gmail.com  ");
+
+        PasswordResetResponse expectedResponse = new PasswordResetResponse();
+
+        when(accountRepository.findByEmail("customer@gmail.com")).thenReturn(Optional.of(account));
+        when(passwordResetRepository.findByAccountId(1L)).thenReturn(Collections.emptyList());
+        when(passwordResetRepository.existsByToken(anyString())).thenReturn(false);
+        when(passwordResetRepository.save(any(PasswordReset.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(passwordResetMapper.toPasswordResetResponse(any(PasswordReset.class)))
+                .thenReturn(expectedResponse);
+
+        PasswordResetResponse actualResponse = passwordResetService.createResetToken(request);
+
+        assertEquals(expectedResponse, actualResponse);
+
+        ArgumentCaptor<PasswordReset> resetCaptor = ArgumentCaptor.forClass(PasswordReset.class);
+        verify(passwordResetRepository).save(resetCaptor.capture());
+
+        PasswordReset savedReset = resetCaptor.getValue();
+        assertNotNull(savedReset.getToken());
+        assertEquals(account, savedReset.getAccount());
+        assertFalse(savedReset.getIsUsed());
+        assertTrue(savedReset.getExpiresAt().isAfter(LocalDateTime.now().plusMinutes(14)));
+
+        verify(emailService).sendResetPasswordEmail("customer@gmail.com", savedReset.getToken());
+        verify(passwordResetRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void createResetToken_WithExistingUnusedTokens_InvalidatesOldTokensAndSendsEmail() {
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setEmail("customer@gmail.com");
 
         PasswordReset oldUnusedToken = PasswordReset.builder()
-                .id(1L)
-                .token("old-token")
+                .id(10L)
+                .token("old-unused-token")
                 .account(account)
                 .isUsed(false)
+                .expiresAt(LocalDateTime.now().plusMinutes(5))
                 .build();
 
-        when(accountRepository.findByEmail("user@cfshop.vn")).thenReturn(Optional.of(account));
-        when(passwordResetRepository.findByAccountId(5L)).thenReturn(List.of(oldUnusedToken));
+        PasswordReset oldUsedToken = PasswordReset.builder()
+                .id(11L)
+                .token("old-used-token")
+                .account(account)
+                .isUsed(true)
+                .expiresAt(LocalDateTime.now().minusMinutes(10))
+                .build();
+
+        List<PasswordReset> existingTokens = List.of(oldUnusedToken, oldUsedToken);
+
+        when(accountRepository.findByEmail("customer@gmail.com")).thenReturn(Optional.of(account));
+        when(passwordResetRepository.findByAccountId(1L)).thenReturn(existingTokens);
         when(passwordResetRepository.existsByToken(anyString())).thenReturn(false);
-        when(passwordResetRepository.save(any(PasswordReset.class))).thenReturn(passwordReset);
-        when(passwordResetMapper.toPasswordResetResponse(passwordReset)).thenReturn(passwordResetResponse);
+        when(passwordResetRepository.save(any(PasswordReset.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(passwordResetMapper.toPasswordResetResponse(any(PasswordReset.class)))
+                .thenReturn(new PasswordResetResponse());
 
-        PasswordResetResponse result = passwordResetService.createResetToken(request);
+        passwordResetService.createResetToken(request);
 
-        assertNotNull(result);
-        assertEquals(10L, result.getId());
         assertTrue(oldUnusedToken.getIsUsed());
-        verify(passwordResetRepository).saveAll(List.of(oldUnusedToken));
-        verify(passwordResetRepository).save(any(PasswordReset.class));
+        assertTrue(oldUsedToken.getIsUsed());
+        verify(passwordResetRepository).saveAll(existingTokens);
+        verify(emailService).sendResetPasswordEmail(eq("customer@gmail.com"), anyString());
     }
 
     @Test
-    void createResetToken_AccountNotExisted_ThrowsException() {
-        ForgotPasswordRequest request = ForgotPasswordRequest.builder()
-                .email("unknown@cfshop.vn")
-                .build();
+    void createResetToken_AccountNotFound_ThrowsExceptionAndDoesNotSendEmail() {
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setEmail("notfound@gmail.com");
 
-        when(accountRepository.findByEmail("unknown@cfshop.vn")).thenReturn(Optional.empty());
+        when(accountRepository.findByEmail("notfound@gmail.com")).thenReturn(Optional.empty());
 
-        AppException exception = assertThrows(AppException.class,
-                () -> passwordResetService.createResetToken(request));
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> passwordResetService.createResetToken(request)
+        );
 
         assertEquals(ErrorCode.ACCOUNT_NOT_EXISTED, exception.getErrorCode());
         verify(passwordResetRepository, never()).save(any());
+        verify(emailService, never()).sendResetPasswordEmail(anyString(), anyString());
     }
 
     @Test
-    void resetPassword_Success() {
-        ResetPasswordRequest request = ResetPasswordRequest.builder()
-                .token("  valid-reset-token  ")
-                .newPassword("NewPass@123")
+    void createResetToken_EmailSendFails_PropagatesException() {
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setEmail("customer@gmail.com");
+
+        when(accountRepository.findByEmail("customer@gmail.com")).thenReturn(Optional.of(account));
+        when(passwordResetRepository.findByAccountId(1L)).thenReturn(Collections.emptyList());
+        when(passwordResetRepository.existsByToken(anyString())).thenReturn(false);
+        when(passwordResetRepository.save(any(PasswordReset.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        doThrow(new RuntimeException("SMTP error"))
+                .when(emailService).sendResetPasswordEmail(eq("customer@gmail.com"), anyString());
+
+        assertThrows(RuntimeException.class, () -> passwordResetService.createResetToken(request));
+        verify(passwordResetMapper, never()).toPasswordResetResponse(any());
+    }
+
+    @Test
+    void resetPassword_ValidToken_UpdatesPasswordAndMarksTokenUsed() {
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("  valid-uuid-token  ");
+        request.setNewPassword("newSecret123");
+
+        PasswordReset passwordReset = PasswordReset.builder()
+                .id(1L)
+                .token("valid-uuid-token")
+                .account(account)
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
+                .isUsed(false)
                 .build();
 
-        when(passwordResetRepository.findByToken("valid-reset-token")).thenReturn(Optional.of(passwordReset));
-        when(passwordEncoder.encode("NewPass@123")).thenReturn("new_encoded_hash");
-        when(accountRepository.save(account)).thenReturn(account);
-        when(passwordResetRepository.save(passwordReset)).thenReturn(passwordReset);
+        when(passwordResetRepository.findByToken("valid-uuid-token")).thenReturn(Optional.of(passwordReset));
+        when(passwordEncoder.encode("newSecret123")).thenReturn("encodedNewPassword");
 
         passwordResetService.resetPassword(request);
 
-        assertEquals("new_encoded_hash", account.getPasswordHash());
+        assertEquals("encodedNewPassword", account.getPasswordHash());
         assertTrue(passwordReset.getIsUsed());
         verify(accountRepository).save(account);
         verify(passwordResetRepository).save(passwordReset);
     }
 
     @Test
-    void resetPassword_TokenInvalid_ThrowsException() {
-        ResetPasswordRequest request = ResetPasswordRequest.builder()
-                .token("invalid-token")
-                .newPassword("NewPass@123")
-                .build();
+    void resetPassword_TokenNotFound_ThrowsTokenInvalid() {
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("invalid-token");
+        request.setNewPassword("newSecret123");
 
         when(passwordResetRepository.findByToken("invalid-token")).thenReturn(Optional.empty());
 
-        AppException exception = assertThrows(AppException.class,
-                () -> passwordResetService.resetPassword(request));
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> passwordResetService.resetPassword(request)
+        );
 
         assertEquals(ErrorCode.TOKEN_INVALID, exception.getErrorCode());
         verify(accountRepository, never()).save(any());
+        verify(passwordResetRepository, never()).save(any());
     }
 
     @Test
-    void resetPassword_TokenAlreadyUsed_ThrowsException() {
-        passwordReset.setIsUsed(true);
-        ResetPasswordRequest request = ResetPasswordRequest.builder()
-                .token("valid-reset-token")
-                .newPassword("NewPass@123")
+    void resetPassword_TokenAlreadyUsed_ThrowsTokenAlreadyUsed() {
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("used-token");
+        request.setNewPassword("newSecret123");
+
+        PasswordReset passwordReset = PasswordReset.builder()
+                .id(1L)
+                .token("used-token")
+                .account(account)
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
+                .isUsed(true)
                 .build();
 
-        when(passwordResetRepository.findByToken("valid-reset-token")).thenReturn(Optional.of(passwordReset));
+        when(passwordResetRepository.findByToken("used-token")).thenReturn(Optional.of(passwordReset));
 
-        AppException exception = assertThrows(AppException.class,
-                () -> passwordResetService.resetPassword(request));
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> passwordResetService.resetPassword(request)
+        );
 
         assertEquals(ErrorCode.TOKEN_ALREADY_USED, exception.getErrorCode());
         verify(accountRepository, never()).save(any());
+        verify(passwordResetRepository, never()).save(any());
     }
 
     @Test
-    void resetPassword_TokenExpired_ThrowsException() {
-        passwordReset.setExpiresAt(LocalDateTime.now().minusMinutes(1));
-        ResetPasswordRequest request = ResetPasswordRequest.builder()
-                .token("valid-reset-token")
-                .newPassword("NewPass@123")
+    void resetPassword_TokenExpired_ThrowsTokenExpired() {
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("expired-token");
+        request.setNewPassword("newSecret123");
+
+        PasswordReset passwordReset = PasswordReset.builder()
+                .id(1L)
+                .token("expired-token")
+                .account(account)
+                .expiresAt(LocalDateTime.now().minusMinutes(1))
+                .isUsed(false)
                 .build();
 
-        when(passwordResetRepository.findByToken("valid-reset-token")).thenReturn(Optional.of(passwordReset));
+        when(passwordResetRepository.findByToken("expired-token")).thenReturn(Optional.of(passwordReset));
 
-        AppException exception = assertThrows(AppException.class,
-                () -> passwordResetService.resetPassword(request));
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> passwordResetService.resetPassword(request)
+        );
 
         assertEquals(ErrorCode.TOKEN_EXPIRED, exception.getErrorCode());
         verify(accountRepository, never()).save(any());
+        verify(passwordResetRepository, never()).save(any());
     }
 }

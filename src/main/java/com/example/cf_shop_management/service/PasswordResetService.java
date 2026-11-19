@@ -30,6 +30,7 @@ public class PasswordResetService {
     AccountRepository accountRepository;
     PasswordResetMapper passwordResetMapper;
     PasswordEncoder passwordEncoder;
+    EmailService emailService;
 
     @Transactional
     public PasswordResetResponse createResetToken(ForgotPasswordRequest request) {
@@ -59,7 +60,10 @@ public class PasswordResetService {
                 .isUsed(false)
                 .build();
 
-        return passwordResetMapper.toPasswordResetResponse(passwordResetRepository.save(passwordReset));
+        PasswordReset savedReset = passwordResetRepository.save(passwordReset);
+        emailService.sendResetPasswordEmail(trimmedEmail, token);
+
+        return passwordResetMapper.toPasswordResetResponse(savedReset);
     }
 
     @Transactional
