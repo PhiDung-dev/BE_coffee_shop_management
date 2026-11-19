@@ -38,11 +38,12 @@ class AccountControllerTest {
     @MockitoBean
     private AccountService accountService;
 
-    private AccountResponse accountResponse;
+    private AccountResponse staffResponse;
+    private AccountResponse customerResponse;
 
     @BeforeEach
     void setUp() {
-        accountResponse = AccountResponse.builder()
+        staffResponse = AccountResponse.builder()
                 .id(1L)
                 .email("staff@cfshop.vn")
                 .phone("0905123456")
@@ -51,41 +52,89 @@ class AccountControllerTest {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
+
+        customerResponse = AccountResponse.builder()
+                .id(2L)
+                .email("customer@cfshop.vn")
+                .phone("0905999888")
+                .status("ACTIVE")
+                .roleName("CUSTOMER")
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
     }
 
     @Test
-    void createAccount_Success() throws Exception {
+    void createCustomerAccount_Success() throws Exception {
+        AccountCreateRequest request = AccountCreateRequest.builder()
+                .email("customer@cfshop.vn")
+                .password("123456")
+                .phone("0905999888")
+                .status("ACTIVE")
+                .build();
+
+        when(accountService.createCustomerAccount(any(AccountCreateRequest.class))).thenReturn(customerResponse);
+
+        mockMvc.perform(post("/api/accounts/customer")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result.id").value(2L))
+                .andExpect(jsonPath("$.result.email").value("customer@cfshop.vn"))
+                .andExpect(jsonPath("$.result.roleName").value("CUSTOMER"));
+
+        verify(accountService, times(1)).createCustomerAccount(any(AccountCreateRequest.class));
+    }
+
+    @Test
+    void createCustomerAccount_EmailExisted_Returns4xx() throws Exception {
+        AccountCreateRequest request = AccountCreateRequest.builder()
+                .email("customer@cfshop.vn")
+                .password("123456")
+                .build();
+
+        when(accountService.createCustomerAccount(any(AccountCreateRequest.class)))
+                .thenThrow(new AppException(ErrorCode.EMAIL_EXISTED));
+
+        mockMvc.perform(post("/api/accounts/customer")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    void createStaffAccount_Success() throws Exception {
         AccountCreateRequest request = AccountCreateRequest.builder()
                 .email("staff@cfshop.vn")
                 .password("123456")
                 .phone("0905123456")
                 .status("ACTIVE")
-                .roleId(2L)
                 .build();
 
-        when(accountService.createAccount(any(AccountCreateRequest.class))).thenReturn(accountResponse);
+        when(accountService.createStaffAccount(any(AccountCreateRequest.class))).thenReturn(staffResponse);
 
-        mockMvc.perform(post("/api/accounts")
+        mockMvc.perform(post("/api/accounts/staff")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result.id").value(1L))
                 .andExpect(jsonPath("$.result.email").value("staff@cfshop.vn"))
                 .andExpect(jsonPath("$.result.roleName").value("STAFF"));
+
+        verify(accountService, times(1)).createStaffAccount(any(AccountCreateRequest.class));
     }
 
     @Test
-    void createAccount_EmailExisted_Returns4xx() throws Exception {
+    void createStaffAccount_EmailExisted_Returns4xx() throws Exception {
         AccountCreateRequest request = AccountCreateRequest.builder()
                 .email("staff@cfshop.vn")
                 .password("123456")
-                .roleId(2L)
                 .build();
 
-        when(accountService.createAccount(any(AccountCreateRequest.class)))
+        when(accountService.createStaffAccount(any(AccountCreateRequest.class)))
                 .thenThrow(new AppException(ErrorCode.EMAIL_EXISTED));
 
-        mockMvc.perform(post("/api/accounts")
+        mockMvc.perform(post("/api/accounts/staff")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().is4xxClientError());
@@ -93,7 +142,7 @@ class AccountControllerTest {
 
     @Test
     void getAccountById_Success() throws Exception {
-        when(accountService.getAccountById(1L)).thenReturn(accountResponse);
+        when(accountService.getAccountById(1L)).thenReturn(staffResponse);
 
         mockMvc.perform(get("/api/accounts/{id}", 1L))
                 .andExpect(status().isOk())
@@ -112,19 +161,12 @@ class AccountControllerTest {
 
     @Test
     void getAllAccounts_Success() throws Exception {
-        AccountResponse secondAccount = AccountResponse.builder()
-                .id(2L)
-                .email("admin@cfshop.vn")
-                .status("ACTIVE")
-                .roleName("ADMIN")
-                .build();
-
-        when(accountService.getAllAccounts()).thenReturn(List.of(accountResponse, secondAccount));
+        when(accountService.getAllAccounts()).thenReturn(List.of(staffResponse, customerResponse));
 
         mockMvc.perform(get("/api/accounts"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result.length()").value(2))
-                .andExpect(jsonPath("$.result[1].email").value("admin@cfshop.vn"));
+                .andExpect(jsonPath("$.result[1].email").value("customer@cfshop.vn"));
     }
 
     @Test

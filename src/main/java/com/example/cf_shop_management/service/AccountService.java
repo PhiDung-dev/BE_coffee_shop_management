@@ -30,7 +30,16 @@ public class AccountService {
     PasswordEncoder passwordEncoder;
 
     @Transactional
-    public AccountResponse createAccount(AccountCreateRequest request) {
+    public AccountResponse createCustomerAccount(AccountCreateRequest request) {
+        return createAccountWithRole(request, "CUSTOMER");
+    }
+
+    @Transactional
+    public AccountResponse createStaffAccount(AccountCreateRequest request) {
+        return createAccountWithRole(request, "STAFF");
+    }
+
+    private AccountResponse createAccountWithRole(AccountCreateRequest request, String roleName) {
         String trimmedEmail = request.getEmail().trim();
         if (accountRepository.existsByEmail(trimmedEmail)) {
             throw new AppException(ErrorCode.EMAIL_EXISTED);
@@ -39,7 +48,7 @@ public class AccountService {
         Account account = accountMapper.toAccount(request);
         account.setEmail(trimmedEmail);
 
-        Role role = roleRepository.findById(request.getRoleId())
+        Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
         account.setRole(role);
         account.setPasswordHash(passwordEncoder.encode(request.getPassword()));

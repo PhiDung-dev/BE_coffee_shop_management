@@ -20,10 +20,17 @@ import java.util.List;
 public class AccountController {
     AccountService accountService;
 
-    @PostMapping
-    public ApiResponse<AccountResponse> createAccount(@Valid @RequestBody AccountCreateRequest request) {
+    @PostMapping("/customer")
+    public ApiResponse<AccountResponse> createCustomerAccount(@RequestBody @Valid AccountCreateRequest request) {
         return ApiResponse.<AccountResponse>builder()
-                .result(accountService.createAccount(request))
+                .result(accountService.createCustomerAccount(request))
+                .build();
+    }
+
+    @PostMapping("/staff")
+    public ApiResponse<AccountResponse> createStaffAccount(@RequestBody @Valid AccountCreateRequest request) {
+        return ApiResponse.<AccountResponse>builder()
+                .result(accountService.createStaffAccount(request))
                 .build();
     }
 

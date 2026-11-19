@@ -44,8 +44,11 @@ class AccountServiceTest {
     private AccountService accountService;
 
     private Role staffRole;
-    private Account account;
-    private AccountResponse accountResponse;
+    private Role customerRole;
+    private Account staffAccount;
+    private Account customerAccount;
+    private AccountResponse staffResponse;
+    private AccountResponse customerResponse;
 
     @BeforeEach
     void setUp() {
@@ -54,7 +57,12 @@ class AccountServiceTest {
                 .name("STAFF")
                 .build();
 
-        account = Account.builder()
+        customerRole = Role.builder()
+                .id(3L)
+                .name("CUSTOMER")
+                .build();
+
+        staffAccount = Account.builder()
                 .id(1L)
                 .email("staff@cfshop.vn")
                 .passwordHash("encoded_password")
@@ -63,37 +71,122 @@ class AccountServiceTest {
                 .role(staffRole)
                 .build();
 
-        accountResponse = AccountResponse.builder()
+        customerAccount = Account.builder()
+                .id(2L)
+                .email("customer@cfshop.vn")
+                .passwordHash("encoded_password")
+                .phone("0905999888")
+                .status("ACTIVE")
+                .role(customerRole)
+                .build();
+
+        staffResponse = AccountResponse.builder()
                 .id(1L)
                 .email("staff@cfshop.vn")
                 .phone("0905123456")
                 .status("ACTIVE")
                 .roleName("STAFF")
                 .build();
+
+        customerResponse = AccountResponse.builder()
+                .id(2L)
+                .email("customer@cfshop.vn")
+                .phone("0905999888")
+                .status("ACTIVE")
+                .roleName("CUSTOMER")
+                .build();
+    }
+
+    // ==================== CREATE CUSTOMER ACCOUNT ====================
+
+    @Test
+    void createCustomerAccount_DefaultStatusActive_Success() {
+        AccountCreateRequest request = AccountCreateRequest.builder()
+                .email("  customer@cfshop.vn  ")
+                .password("123456")
+                .phone("0905999888")
+                .build();
+
+        Account mappedAccount = new Account();
+
+        when(accountRepository.existsByEmail("customer@cfshop.vn")).thenReturn(false);
+        when(accountMapper.toAccount(request)).thenReturn(mappedAccount);
+        when(roleRepository.findByName("CUSTOMER")).thenReturn(Optional.of(customerRole));
+        when(passwordEncoder.encode("123456")).thenReturn("encoded_password");
+        when(accountRepository.save(mappedAccount)).thenReturn(customerAccount);
+        when(accountMapper.toAccountResponse(customerAccount)).thenReturn(customerResponse);
+
+        AccountResponse result = accountService.createCustomerAccount(request);
+
+        assertNotNull(result);
+        assertEquals(2L, result.getId());
+        assertEquals("CUSTOMER", result.getRoleName());
+        assertEquals("customer@cfshop.vn", mappedAccount.getEmail());
+        assertEquals("encoded_password", mappedAccount.getPasswordHash());
+        assertEquals("ACTIVE", mappedAccount.getStatus());
+        assertEquals(customerRole, mappedAccount.getRole());
+        verify(accountRepository).save(mappedAccount);
     }
 
     @Test
-    void createAccount_DefaultStatusActive_Success() {
+    void createCustomerAccount_EmailExisted_ThrowsException() {
+        AccountCreateRequest request = AccountCreateRequest.builder()
+                .email("  customer@cfshop.vn  ")
+                .password("123456")
+                .build();
+
+        when(accountRepository.existsByEmail("customer@cfshop.vn")).thenReturn(true);
+
+        AppException exception = assertThrows(AppException.class,
+                () -> accountService.createCustomerAccount(request));
+
+        assertEquals(ErrorCode.EMAIL_EXISTED, exception.getErrorCode());
+        verify(roleRepository, never()).findByName(any());
+        verify(accountRepository, never()).save(any());
+    }
+
+    @Test
+    void createCustomerAccount_RoleNotExisted_ThrowsException() {
+        AccountCreateRequest request = AccountCreateRequest.builder()
+                .email("customer@cfshop.vn")
+                .password("123456")
+                .build();
+
+        when(accountRepository.existsByEmail("customer@cfshop.vn")).thenReturn(false);
+        when(accountMapper.toAccount(request)).thenReturn(new Account());
+        when(roleRepository.findByName("CUSTOMER")).thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(AppException.class,
+                () -> accountService.createCustomerAccount(request));
+
+        assertEquals(ErrorCode.ROLE_NOT_EXISTED, exception.getErrorCode());
+        verify(accountRepository, never()).save(any());
+    }
+
+    // ==================== CREATE STAFF ACCOUNT ====================
+
+    @Test
+    void createStaffAccount_DefaultStatusActive_Success() {
         AccountCreateRequest request = AccountCreateRequest.builder()
                 .email("  staff@cfshop.vn  ")
                 .password("123456")
                 .phone("0905123456")
-                .roleId(2L)
                 .build();
 
         Account mappedAccount = new Account();
 
         when(accountRepository.existsByEmail("staff@cfshop.vn")).thenReturn(false);
         when(accountMapper.toAccount(request)).thenReturn(mappedAccount);
-        when(roleRepository.findById(2L)).thenReturn(Optional.of(staffRole));
+        when(roleRepository.findByName("STAFF")).thenReturn(Optional.of(staffRole));
         when(passwordEncoder.encode("123456")).thenReturn("encoded_password");
-        when(accountRepository.save(mappedAccount)).thenReturn(account);
-        when(accountMapper.toAccountResponse(account)).thenReturn(accountResponse);
+        when(accountRepository.save(mappedAccount)).thenReturn(staffAccount);
+        when(accountMapper.toAccountResponse(staffAccount)).thenReturn(staffResponse);
 
-        AccountResponse result = accountService.createAccount(request);
+        AccountResponse result = accountService.createStaffAccount(request);
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
+        assertEquals("STAFF", result.getRoleName());
         assertEquals("staff@cfshop.vn", mappedAccount.getEmail());
         assertEquals("encoded_password", mappedAccount.getPasswordHash());
         assertEquals("ACTIVE", mappedAccount.getStatus());
@@ -102,12 +195,11 @@ class AccountServiceTest {
     }
 
     @Test
-    void createAccount_CustomStatusProvided_KeepsStatus() {
+    void createStaffAccount_CustomStatusProvided_KeepsStatus() {
         AccountCreateRequest request = AccountCreateRequest.builder()
                 .email("staff@cfshop.vn")
                 .password("123456")
                 .status("INACTIVE")
-                .roleId(2L)
                 .build();
 
         Account mappedAccount = Account.builder()
@@ -116,51 +208,52 @@ class AccountServiceTest {
 
         when(accountRepository.existsByEmail("staff@cfshop.vn")).thenReturn(false);
         when(accountMapper.toAccount(request)).thenReturn(mappedAccount);
-        when(roleRepository.findById(2L)).thenReturn(Optional.of(staffRole));
+        when(roleRepository.findByName("STAFF")).thenReturn(Optional.of(staffRole));
         when(passwordEncoder.encode("123456")).thenReturn("encoded_password");
-        when(accountRepository.save(mappedAccount)).thenReturn(account);
-        when(accountMapper.toAccountResponse(account)).thenReturn(accountResponse);
+        when(accountRepository.save(mappedAccount)).thenReturn(staffAccount);
+        when(accountMapper.toAccountResponse(staffAccount)).thenReturn(staffResponse);
 
-        accountService.createAccount(request);
+        accountService.createStaffAccount(request);
 
         assertEquals("INACTIVE", mappedAccount.getStatus());
     }
 
     @Test
-    void createAccount_EmailExisted_ThrowsException() {
+    void createStaffAccount_EmailExisted_ThrowsException() {
         AccountCreateRequest request = AccountCreateRequest.builder()
                 .email("  staff@cfshop.vn  ")
                 .password("123456")
-                .roleId(2L)
                 .build();
 
         when(accountRepository.existsByEmail("staff@cfshop.vn")).thenReturn(true);
 
         AppException exception = assertThrows(AppException.class,
-                () -> accountService.createAccount(request));
+                () -> accountService.createStaffAccount(request));
 
         assertEquals(ErrorCode.EMAIL_EXISTED, exception.getErrorCode());
+        verify(roleRepository, never()).findByName(any());
         verify(accountRepository, never()).save(any());
     }
 
     @Test
-    void createAccount_RoleNotExisted_ThrowsException() {
+    void createStaffAccount_RoleNotExisted_ThrowsException() {
         AccountCreateRequest request = AccountCreateRequest.builder()
                 .email("staff@cfshop.vn")
                 .password("123456")
-                .roleId(99L)
                 .build();
 
         when(accountRepository.existsByEmail("staff@cfshop.vn")).thenReturn(false);
         when(accountMapper.toAccount(request)).thenReturn(new Account());
-        when(roleRepository.findById(99L)).thenReturn(Optional.empty());
+        when(roleRepository.findByName("STAFF")).thenReturn(Optional.empty());
 
         AppException exception = assertThrows(AppException.class,
-                () -> accountService.createAccount(request));
+                () -> accountService.createStaffAccount(request));
 
         assertEquals(ErrorCode.ROLE_NOT_EXISTED, exception.getErrorCode());
         verify(accountRepository, never()).save(any());
     }
+
+    // ==================== UPDATE, GET & DELETE ====================
 
     @Test
     void updateAccount_Success() {
@@ -172,21 +265,21 @@ class AccountServiceTest {
                 .status("INACTIVE")
                 .build();
 
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(staffAccount));
         when(accountRepository.existsByEmailIgnoreCaseAndIdNot("newstaff@cfshop.vn", 1L)).thenReturn(false);
         when(roleRepository.findById(1L)).thenReturn(Optional.of(adminRole));
         when(passwordEncoder.encode("newpass123")).thenReturn("new_encoded_hash");
-        when(accountRepository.save(account)).thenReturn(account);
-        when(accountMapper.toAccountResponse(account)).thenReturn(accountResponse);
+        when(accountRepository.save(staffAccount)).thenReturn(staffAccount);
+        when(accountMapper.toAccountResponse(staffAccount)).thenReturn(staffResponse);
 
         AccountResponse result = accountService.updateAccount(1L, request);
 
         assertNotNull(result);
         assertEquals("newstaff@cfshop.vn", request.getEmail());
-        assertEquals(adminRole, account.getRole());
-        assertEquals("new_encoded_hash", account.getPasswordHash());
-        verify(accountMapper).updateAccount(request, account);
-        verify(accountRepository).save(account);
+        assertEquals(adminRole, staffAccount.getRole());
+        assertEquals("new_encoded_hash", staffAccount.getPasswordHash());
+        verify(accountMapper).updateAccount(request, staffAccount);
+        verify(accountRepository).save(staffAccount);
     }
 
     @Test
@@ -206,7 +299,7 @@ class AccountServiceTest {
                 .email("duplicate@cfshop.vn")
                 .build();
 
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(staffAccount));
         when(accountRepository.existsByEmailIgnoreCaseAndIdNot("duplicate@cfshop.vn", 1L)).thenReturn(true);
 
         AppException exception = assertThrows(AppException.class,
@@ -222,7 +315,7 @@ class AccountServiceTest {
                 .roleId(99L)
                 .build();
 
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(staffAccount));
         when(roleRepository.findById(99L)).thenReturn(Optional.empty());
 
         AppException exception = assertThrows(AppException.class,
@@ -234,8 +327,8 @@ class AccountServiceTest {
 
     @Test
     void getAccountById_Success() {
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(accountMapper.toAccountResponse(account)).thenReturn(accountResponse);
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(staffAccount));
+        when(accountMapper.toAccountResponse(staffAccount)).thenReturn(staffResponse);
 
         AccountResponse result = accountService.getAccountById(1L);
 
@@ -255,13 +348,15 @@ class AccountServiceTest {
 
     @Test
     void getAllAccounts_Success() {
-        when(accountRepository.findAll()).thenReturn(List.of(account));
-        when(accountMapper.toAccountResponse(account)).thenReturn(accountResponse);
+        when(accountRepository.findAll()).thenReturn(List.of(staffAccount, customerAccount));
+        when(accountMapper.toAccountResponse(staffAccount)).thenReturn(staffResponse);
+        when(accountMapper.toAccountResponse(customerAccount)).thenReturn(customerResponse);
 
         List<AccountResponse> result = accountService.getAllAccounts();
 
-        assertEquals(1, result.size());
+        assertEquals(2, result.size());
         assertEquals("staff@cfshop.vn", result.get(0).getEmail());
+        assertEquals("customer@cfshop.vn", result.get(1).getEmail());
     }
 
     @Test

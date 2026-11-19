@@ -68,6 +68,7 @@ public enum ErrorCode {
     TABLE_NOT_EXISTED(1054, "Không tìm thấy bàn", HttpStatus.NOT_FOUND),
     TABLE_NUMBER_EXISTED(1055, "Số bàn đã tồn tại", HttpStatus.BAD_REQUEST),
     AREA_NOT_EXISTED(1056, "Không tìm thấy khu vực", HttpStatus.NOT_FOUND),
+    UNAUTHENTICATED(1057, "sai tai khoan hoac mat khau", HttpStatus.UNAUTHORIZED);
     ;
 
     int code;
