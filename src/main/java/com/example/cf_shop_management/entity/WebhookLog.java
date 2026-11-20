@@ -20,19 +20,25 @@ public class WebhookLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     Long id;
-    @Column(name = "gateway", length = 50)
+
+    @Column(name = "gateway", nullable = false, length = 50)
     String gateway;
-    @Column(name = "payload", columnDefinition = "TEXT")
+
+    @Column(name = "payload", nullable = false, columnDefinition = "TEXT")
     String payload;
+
+    @Column(name = "status", nullable = false, length = 30)
+    @Builder.Default
+    String status = "RECEIVED";
+
     @Column(name = "error_message", columnDefinition = "TEXT")
     String errorMessage;
-    @Column(name = "status", length = 30)
-    String status;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     LocalDateTime createdAt;
+
     @UpdateTimestamp
     @Column(name = "updated_at")
     LocalDateTime updatedAt;
